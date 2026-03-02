@@ -81,21 +81,36 @@
             style="@style/Widget.AppCompat.Button.Borderless"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:src="@drawable/ic_previous" />
+            android:contentDescription="@string/previous"
+            android:src="@drawable/ic_previous"
+            app:tint="?attr/colorControlNormal" />
 
         <ImageButton
             android:id="@+id/play_pause"
             style="@style/Widget.AppCompat.Button.Borderless"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:src="@drawable/ic_play" />
+            android:contentDescription="@string/play_pause"
+            android:src="@drawable/ic_play"
+            app:tint="?attr/colorControlNormal" />
+
+        <ImageButton
+            android:id="@+id/stop"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:contentDescription="@string/stop"
+            android:src="@drawable/ic_stop"
+            app:tint="?attr/colorControlNormal" />
 
         <ImageButton
             android:id="@+id/next"
             style="@style/Widget.AppCompat.Button.Borderless"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:src="@drawable/ic_next" />
+            android:contentDescription="@string/next"
+            android:src="@drawable/ic_next"
+            app:tint="?attr/colorControlNormal" />
 
     </LinearLayout>
 

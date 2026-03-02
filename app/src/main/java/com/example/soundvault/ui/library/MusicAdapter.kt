@@ -27,9 +27,14 @@ class MusicAdapter(
         Glide.with(holder.itemView.context)
             .load(music.artUri)
             .placeholder(R.mipmap.ic_launcher)
+            .error(R.mipmap.ic_launcher)
             .into(holder.albumArt)
+        
         holder.itemView.setOnClickListener {
-            onItemClicked(position)
+            val currentPos = holder.bindingAdapterPosition
+            if (currentPos != RecyclerView.NO_POSITION) {
+                onItemClicked(currentPos)
+            }
         }
     }
 

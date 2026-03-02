@@ -13,6 +13,12 @@
     <string name="menu_settings">Settings</string>
 
     <string name="album_art">Album Art</string>
+    <string name="refresh">Refresh Music Library</string>
+
+    <string name="previous">Previous Song</string>
+    <string name="play_pause">Play or Pause</string>
+    <string name="stop">Stop Playback</string>
+    <string name="next">Next Song</string>
 
     <string name="lorem_ipsum_title">Lorem Ipsum"</string>
     <string name="lorem_ipsum">Lorem Ipsum is simply placeholder text of the printing and

@@ -16,15 +16,27 @@ import com.example.soundvault.databinding.FragmentNowPlayingBinding
 
 class NowPlayingFragment : Fragment() {
 
-    private lateinit var binding: FragmentNowPlayingBinding
+    private var _binding: FragmentNowPlayingBinding? = null
+    private val binding get() = _binding!!
     private lateinit var handler: Handler
+    private val updateSeekBarRunnable = object : Runnable {
+        override fun run() {
+            val mainActivity = activity as? MainActivity
+            if (_binding != null && isAdded && mainActivity != null) {
+                mainActivity.musicService?.getCurrentPosition()?.let {
+                    binding.seekBar.progress = it
+                }
+                handler.postDelayed(this, 1000)
+            }
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentNowPlayingBinding.inflate(inflater, container, false)
+        _binding = FragmentNowPlayingBinding.inflate(inflater, container, false)
         handler = Handler(Looper.getMainLooper())
         return binding.root
     }
@@ -32,16 +44,17 @@ class NowPlayingFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        (activity as MainActivity).musicService?.currentMusic?.observe(viewLifecycleOwner) {
+        val mainActivity = activity as? MainActivity
+        mainActivity?.musicService?.currentMusic?.observe(viewLifecycleOwner) {
             updateUI(it)
         }
 
-        (activity as MainActivity).musicService?.isPlaying?.observe(viewLifecycleOwner) {
+        mainActivity?.musicService?.isPlaying?.observe(viewLifecycleOwner) {
             updatePlayPauseButton(it)
         }
 
         binding.playPause.setOnClickListener {
-            (activity as MainActivity).musicService?.let {
+            (activity as? MainActivity)?.musicService?.let {
                 if (it.isPlaying.value == true) {
                     it.pause()
                 } else {
@@ -50,18 +63,22 @@ class NowPlayingFragment : Fragment() {
             }
         }
 
+        binding.stop.setOnClickListener {
+            (activity as? MainActivity)?.musicService?.stop()
+        }
+
         binding.next.setOnClickListener {
-            (activity as MainActivity).musicService?.next()
+            (activity as? MainActivity)?.musicService?.next()
         }
 
         binding.previous.setOnClickListener {
-            (activity as MainActivity).musicService?.previous()
+            (activity as? MainActivity)?.musicService?.previous()
         }
 
         binding.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
-                    (activity as MainActivity).musicService?.seekTo(progress)
+                    (activity as? MainActivity)?.musicService?.seekTo(progress)
                 }
             }
 
@@ -69,23 +86,39 @@ class NowPlayingFragment : Fragment() {
 
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
+    }
 
-        updateSeekBar()
+    override fun onResume() {
+        super.onResume()
+        handler.post(updateSeekBarRunnable)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        handler.removeCallbacks(updateSeekBarRunnable)
     }
 
     private fun updateUI(music: Music?) {
-        music?.let {
-            binding.title.text = it.title
-            binding.artist.text = it.artist
+        if (_binding == null) return
+        if (music != null) {
+            binding.title.text = music.title
+            binding.artist.text = music.artist
             Glide.with(this)
-                .load(it.artUri)
+                .load(music.artUri)
                 .placeholder(R.mipmap.ic_launcher)
+                .error(R.mipmap.ic_launcher)
                 .into(binding.albumArt)
-            binding.seekBar.max = it.duration.toInt()
+            binding.seekBar.max = music.duration.toInt()
+        } else {
+            binding.title.text = ""
+            binding.artist.text = ""
+            binding.albumArt.setImageResource(R.mipmap.ic_launcher)
+            binding.seekBar.progress = 0
         }
     }
 
     private fun updatePlayPauseButton(isPlaying: Boolean) {
+        if (_binding == null) return
         if (isPlaying) {
             binding.playPause.setImageResource(R.drawable.ic_pause)
         } else {
@@ -93,10 +126,8 @@ class NowPlayingFragment : Fragment() {
         }
     }
 
-    private fun updateSeekBar() {
-        (activity as MainActivity).musicService?.getCurrentPosition()?.let {
-            binding.seekBar.progress = it
-        }
-        handler.postDelayed({ updateSeekBar() }, 1000)
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

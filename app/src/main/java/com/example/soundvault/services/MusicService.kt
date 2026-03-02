@@ -9,13 +9,14 @@ import android.media.MediaPlayer
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.MutableLiveData
 import com.example.soundvault.MainActivity
 import com.example.soundvault.R
 import com.example.soundvault.data.Music
 
-class MusicService : Service(), MediaPlayer.OnCompletionListener {
+class MusicService : Service(), MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener {
 
     private var mediaPlayer: MediaPlayer? = null
     private var musicList: ArrayList<Music> = ArrayList()
@@ -46,21 +47,59 @@ class MusicService : Service(), MediaPlayer.OnCompletionListener {
 
     fun play(position: Int) {
         if (position >= 0 && position < musicList.size) {
+            val songToPlay = musicList[position]
             currentPosition = position
-            currentMusic.postValue(musicList[currentPosition])
-            mediaPlayer?.reset()
+            currentMusic.postValue(songToPlay)
+            
+            Log.d("MusicService", "Playing song at pos $position: ${songToPlay.title} - Uri: ${songToPlay.contentUri}")
+
+            try {
+                mediaPlayer?.stop()
+                mediaPlayer?.release()
+                
+                // MediaPlayer.create handles setDataSource and prepare()
+                mediaPlayer = MediaPlayer.create(this, songToPlay.contentUri)
+                
+                if (mediaPlayer != null) {
+                    mediaPlayer?.apply {
+                        setOnCompletionListener(this@MusicService)
+                        setOnErrorListener(this@MusicService)
+                        start()
+                        this@MusicService.isPlaying.postValue(true)
+                        showNotification()
+                    }
+                } else {
+                    Log.e("MusicService", "Failed to create MediaPlayer for Uri: ${songToPlay.contentUri}")
+                    // Fallback attempt with path if contentUri failed
+                    playWithPath(songToPlay)
+                }
+            } catch (e: Exception) {
+                Log.e("MusicService", "Error during play()", e)
+                isPlaying.postValue(false)
+            }
+        }
+    }
+
+    private fun playWithPath(song: Music) {
+        try {
             mediaPlayer = MediaPlayer().apply {
-                setDataSource(musicList[currentPosition].path)
+                setDataSource(song.path)
                 prepare()
                 start()
                 setOnCompletionListener(this@MusicService)
+                setOnErrorListener(this@MusicService)
             }
             isPlaying.postValue(true)
             showNotification()
+        } catch (e: Exception) {
+            Log.e("MusicService", "Error playing with path fallback", e)
+            isPlaying.postValue(false)
         }
     }
 
     private fun showNotification() {
+        if (currentPosition < 0 || currentPosition >= musicList.size) return
+        
         createNotificationChannel()
         val notificationIntent = Intent(this, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
@@ -86,7 +125,7 @@ class MusicService : Service(), MediaPlayer.OnCompletionListener {
 
     private fun getPendingIntent(action: String): PendingIntent {
         val intent = Intent(this, MusicService::class.java).apply { this.action = action }
-        return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+        return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
     private fun createNotificationChannel() {
@@ -106,15 +145,19 @@ class MusicService : Service(), MediaPlayer.OnCompletionListener {
     }
 
     fun pause() {
-        mediaPlayer?.pause()
-        isPlaying.postValue(false)
-        showNotification()
+        if (mediaPlayer?.isPlaying == true) {
+            mediaPlayer?.pause()
+            isPlaying.postValue(false)
+            showNotification()
+        }
     }
 
     fun resume() {
-        mediaPlayer?.start()
-        isPlaying.postValue(true)
-        showNotification()
+        if (mediaPlayer != null && isPlaying.value == false) {
+            mediaPlayer?.start()
+            isPlaying.postValue(true)
+            showNotification()
+        }
     }
 
     fun stop() {
@@ -123,27 +166,36 @@ class MusicService : Service(), MediaPlayer.OnCompletionListener {
         mediaPlayer = null
         currentMusic.postValue(null)
         isPlaying.postValue(false)
+        //TODO: Remove notification
         stopForeground(true)
     }
 
     fun next() {
-        if (currentPosition < musicList.size - 1) {
-            play(currentPosition + 1)
-        } else {
-            play(0) // Loop to the beginning
+        if (musicList.isNotEmpty()) {
+            val newPosition = if (currentPosition < musicList.size - 1) currentPosition + 1 else 0
+            play(newPosition)
         }
     }
 
     fun previous() {
-        if (currentPosition > 0) {
-            play(currentPosition - 1)
-        } else {
-            play(musicList.size - 1) // Loop to the end
+        if (musicList.isNotEmpty()) {
+            val newPosition = if (currentPosition > 0) currentPosition - 1 else musicList.size - 1
+            play(newPosition)
         }
     }
 
     override fun onCompletion(mp: MediaPlayer?) {
-        next()
+        // Only skip to next if it was actually playing (to avoid infinite error loops)
+        if (isPlaying.value == true) {
+            next()
+        }
+    }
+
+    override fun onError(mp: MediaPlayer?, what: Int, extra: Int): Boolean {
+        Log.e("MusicService", "MediaPlayer error: $what, $extra")
+        isPlaying.postValue(false)
+        // Return true to handled error
+        return true
     }
 
     fun seekTo(position: Int) {
@@ -152,6 +204,11 @@ class MusicService : Service(), MediaPlayer.OnCompletionListener {
 
     fun getCurrentPosition(): Int {
         return mediaPlayer?.currentPosition ?: 0
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaPlayer?.release()
     }
 
     companion object {

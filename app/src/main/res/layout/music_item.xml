@@ -4,12 +4,13 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:padding="8dp">
+    android:gravity="center_vertical"
+    android:padding="4dp">
 
     <ImageView
         android:id="@+id/album_art"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
         android:contentDescription="@string/album_art"
         tools:src="@mipmap/ic_launcher" />
 
@@ -27,6 +28,7 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:maxLines="1"
+            android:textSize="14sp"
             android:textAppearance="?attr/textAppearanceListItem"
             tools:text="Song Title" />
 
@@ -36,6 +38,7 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:maxLines="1"
+            android:textSize="12sp"
             android:textAppearance="?attr/textAppearanceListItemSecondary"
             tools:text="Artist Name" />
     </LinearLayout>
