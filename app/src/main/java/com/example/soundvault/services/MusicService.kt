@@ -15,13 +15,14 @@ import androidx.lifecycle.MutableLiveData
 import com.example.soundvault.MainActivity
 import com.example.soundvault.R
 import com.example.soundvault.data.Music
+import kotlin.random.Random
 
 class MusicService : Service(), MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener {
 
     private var mediaPlayer: MediaPlayer? = null
     private var musicList: ArrayList<Music> = ArrayList()
     private var currentPosition: Int = -1
-
+    var isShuffleEnabled = false
     val currentMusic = MutableLiveData<Music?>()
     val isPlaying = MutableLiveData<Boolean>()
 
@@ -49,15 +50,14 @@ class MusicService : Service(), MediaPlayer.OnCompletionListener, MediaPlayer.On
         if (position >= 0 && position < musicList.size) {
             val songToPlay = musicList[position]
             currentPosition = position
-            currentMusic.postValue(songToPlay)
             
-            Log.d("MusicService", "Playing song at pos $position: ${songToPlay.title} - Uri: ${songToPlay.contentUri}")
+            Log.d("MusicService", "Playing song at pos $position: ${songToPlay.title}")
 
             try {
                 mediaPlayer?.stop()
                 mediaPlayer?.release()
+                mediaPlayer = null
                 
-                // MediaPlayer.create handles setDataSource and prepare()
                 mediaPlayer = MediaPlayer.create(this, songToPlay.contentUri)
                 
                 if (mediaPlayer != null) {
@@ -66,11 +66,11 @@ class MusicService : Service(), MediaPlayer.OnCompletionListener, MediaPlayer.On
                         setOnErrorListener(this@MusicService)
                         start()
                         this@MusicService.isPlaying.postValue(true)
+                        this@MusicService.currentMusic.postValue(songToPlay)
                         showNotification()
                     }
                 } else {
                     Log.e("MusicService", "Failed to create MediaPlayer for Uri: ${songToPlay.contentUri}")
-                    // Fallback attempt with path if contentUri failed
                     playWithPath(songToPlay)
                 }
             } catch (e: Exception) {
@@ -90,6 +90,7 @@ class MusicService : Service(), MediaPlayer.OnCompletionListener, MediaPlayer.On
                 setOnErrorListener(this@MusicService)
             }
             isPlaying.postValue(true)
+            currentMusic.postValue(song)
             showNotification()
         } catch (e: Exception) {
             Log.e("MusicService", "Error playing with path fallback", e)
@@ -166,35 +167,42 @@ class MusicService : Service(), MediaPlayer.OnCompletionListener, MediaPlayer.On
         mediaPlayer = null
         currentMusic.postValue(null)
         isPlaying.postValue(false)
-        //TODO: Remove notification
         stopForeground(true)
     }
 
     fun next() {
         if (musicList.isNotEmpty()) {
-            val newPosition = if (currentPosition < musicList.size - 1) currentPosition + 1 else 0
+            val newPosition = if (isShuffleEnabled) {
+                var randomPos = Random.nextInt(musicList.size)
+                if (musicList.size > 1 && randomPos == currentPosition) {
+                    randomPos = (randomPos + 1) % musicList.size
+                }
+                randomPos
+            } else {
+                if (currentPosition < musicList.size - 1) currentPosition + 1 else 0
+            }
             play(newPosition)
         }
     }
 
     fun previous() {
         if (musicList.isNotEmpty()) {
-            val newPosition = if (currentPosition > 0) currentPosition - 1 else musicList.size - 1
+            val newPosition = if (isShuffleEnabled) {
+                Random.nextInt(musicList.size)
+            } else {
+                if (currentPosition > 0) currentPosition - 1 else musicList.size - 1
+            }
             play(newPosition)
         }
     }
 
     override fun onCompletion(mp: MediaPlayer?) {
-        // Only skip to next if it was actually playing (to avoid infinite error loops)
-        if (isPlaying.value == true) {
-            next()
-        }
+        next()
     }
 
     override fun onError(mp: MediaPlayer?, what: Int, extra: Int): Boolean {
         Log.e("MusicService", "MediaPlayer error: $what, $extra")
         isPlaying.postValue(false)
-        // Return true to handled error
         return true
     }
 
@@ -204,6 +212,10 @@ class MusicService : Service(), MediaPlayer.OnCompletionListener, MediaPlayer.On
 
     fun getCurrentPosition(): Int {
         return mediaPlayer?.currentPosition ?: 0
+    }
+
+    fun getAudioSessionId(): Int {
+        return mediaPlayer?.audioSessionId ?: 0
     }
 
     override fun onDestroy() {

@@ -15,6 +15,9 @@ class MusicAdapter(
     private val onItemClicked: (Int) -> Unit
 ) : RecyclerView.Adapter<MusicAdapter.ViewHolder>() {
 
+    private var isShuffleEnabled: Boolean = false
+    private var currentPlayingPosition: Int = -1
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.music_item, parent, false)
         return ViewHolder(view)
@@ -36,15 +39,28 @@ class MusicAdapter(
                 onItemClicked(currentPos)
             }
         }
+
+        // Highlight the current playing song
+        holder.itemView.isActivated = (currentPlayingPosition == position)
     }
 
-    override fun getItemCount(): Int {
-        return musicList.size
-    }
+    override fun getItemCount(): Int = musicList.size
 
     fun updateMusic(newMusicList: List<Music>) {
         musicList = newMusicList
         notifyDataSetChanged()
+    }
+
+    fun updateShuffleState(enabled: Boolean) {
+        isShuffleEnabled = enabled
+        notifyDataSetChanged()
+    }
+
+    fun setCurrentPlayingPosition(position: Int) {
+        val previousPosition = currentPlayingPosition
+        currentPlayingPosition = position
+        if (previousPosition != -1) notifyItemChanged(previousPosition)
+        if (currentPlayingPosition != -1) notifyItemChanged(currentPlayingPosition)
     }
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {

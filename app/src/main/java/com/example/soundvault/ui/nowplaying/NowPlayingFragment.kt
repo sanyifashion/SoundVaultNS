@@ -1,5 +1,7 @@
 package com.example.soundvault.ui.nowplaying
 
+import Views.VisualizerManager
+import Views.VisualizerView
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -8,14 +10,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.SeekBar
 import androidx.fragment.app.Fragment
-import com.bumptech.glide.Glide
 import com.example.soundvault.MainActivity
 import com.example.soundvault.R
 import com.example.soundvault.data.Music
 import com.example.soundvault.databinding.FragmentNowPlayingBinding
 
 class NowPlayingFragment : Fragment() {
-
     private var _binding: FragmentNowPlayingBinding? = null
     private val binding get() = _binding!!
     private lateinit var handler: Handler
@@ -31,6 +31,10 @@ class NowPlayingFragment : Fragment() {
         }
     }
 
+    // Visualizer components
+    private lateinit var visualizerView: VisualizerView
+    private lateinit var visualizerManager: VisualizerManager
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -44,9 +48,28 @@ class NowPlayingFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Initialize visualizer
+        visualizerView = binding.visualizerView
+        visualizerManager = VisualizerManager(visualizerView)
+
         val mainActivity = activity as? MainActivity
+        binding.shuffle.isChecked = mainActivity?.musicService?.isShuffleEnabled ?: false
+
+        // Set up shuffle callback
+        binding.shuffle.setOnCheckedChangeListener { _, isChecked ->
+            mainActivity?.musicService?.isShuffleEnabled = isChecked
+            // Update library fragment if needed
+            (activity as? MainActivity)?.libraryFragment?.updateShuffleState(isChecked)
+        }
+
         mainActivity?.musicService?.currentMusic?.observe(viewLifecycleOwner) {
             updateUI(it)
+            // Setup visualizer when music changes
+            it?.let { music ->
+                mainActivity.musicService?.let { service ->
+                    visualizerManager.setupVisualizer(requireContext(), service.getAudioSessionId())
+                }
+            }
         }
 
         mainActivity?.musicService?.isPlaying?.observe(viewLifecycleOwner) {
@@ -83,7 +106,6 @@ class NowPlayingFragment : Fragment() {
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
     }
@@ -103,16 +125,10 @@ class NowPlayingFragment : Fragment() {
         if (music != null) {
             binding.title.text = music.title
             binding.artist.text = music.artist
-            Glide.with(this)
-                .load(music.artUri)
-                .placeholder(R.mipmap.ic_launcher)
-                .error(R.mipmap.ic_launcher)
-                .into(binding.albumArt)
             binding.seekBar.max = music.duration.toInt()
         } else {
             binding.title.text = ""
             binding.artist.text = ""
-            binding.albumArt.setImageResource(R.mipmap.ic_launcher)
             binding.seekBar.progress = 0
         }
     }
@@ -128,6 +144,7 @@ class NowPlayingFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        visualizerManager.release()
         _binding = null
     }
 }

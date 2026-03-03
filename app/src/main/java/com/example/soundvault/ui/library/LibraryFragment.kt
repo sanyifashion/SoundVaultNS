@@ -65,34 +65,34 @@ class LibraryFragment : Fragment() {
     }
 
     private fun requestPermissions() {
+        val permissions = mutableListOf<String>()
+        
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ActivityCompat.checkSelfPermission(
-                    requireContext(),
-                    Manifest.permission.READ_MEDIA_AUDIO
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(
-                    requireActivity(),
-                    arrayOf(Manifest.permission.READ_MEDIA_AUDIO),
-                    13
-                )
-            } else {
-                initializeView()
-            }
+            permissions.add(Manifest.permission.READ_MEDIA_AUDIO)
         } else {
-            if (ActivityCompat.checkSelfPermission(
-                    requireContext(),
-                    Manifest.permission.READ_EXTERNAL_STORAGE
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(
-                    requireActivity(),
-                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-                    13
-                )
-            } else {
-                initializeView()
-            }
+            permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+        
+        permissions.add(Manifest.permission.RECORD_AUDIO)
+
+        val permissionsToRequest = permissions.filter {
+            ActivityCompat.checkSelfPermission(requireContext(), it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (permissionsToRequest.isNotEmpty()) {
+            ActivityCompat.requestPermissions(
+                requireActivity(),
+                permissionsToRequest.toTypedArray(),
+                13
+            )
+        } else {
+            initializeView()
+        }
+    }
+
+    fun updateShuffleState(shuffleEnabled: Boolean) {
+        if (::musicAdapter.isInitialized) {
+            musicAdapter.updateShuffleState(shuffleEnabled)
         }
     }
 
@@ -100,7 +100,7 @@ class LibraryFragment : Fragment() {
         val viewModelFactory = LibraryViewModelFactory(requireContext())
         viewModel = ViewModelProvider(this, viewModelFactory)[LibraryViewModel::class.java]
 
-        musicAdapter = MusicAdapter(emptyList()) { position ->
+        musicAdapter = MusicAdapter(emptyList()) { position: Int ->
             val mainActivity = activity as? MainActivity
             val musicList = viewModel.music.value
             if (mainActivity != null && musicList != null) {
@@ -123,6 +123,19 @@ class LibraryFragment : Fragment() {
             binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
             requireActivity().invalidateOptionsMenu()
         }
+
+        (activity as? MainActivity)?.musicService?.currentMusic?.observe(viewLifecycleOwner) { currentMusic ->
+            val musicList = viewModel.music.value
+            if (musicList != null && currentMusic != null) {
+                val index = musicList.indexOfFirst { it.id == currentMusic.id }
+                musicAdapter.setCurrentPlayingPosition(index)
+            } else {
+                musicAdapter.setCurrentPlayingPosition(-1)
+            }
+        }
+        
+        val currentShuffleState = (activity as? MainActivity)?.musicService?.isShuffleEnabled ?: false
+        musicAdapter.updateShuffleState(currentShuffleState)
     }
 
     @Suppress("DEPRECATION")
@@ -132,10 +145,22 @@ class LibraryFragment : Fragment() {
         grantResults: IntArray
     ) {
         if (requestCode == 13) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
                 initializeView()
             } else {
-                // Handle permission denied
+                // If at least storage/audio permission is granted, we can still show the library
+                // even if RECORD_AUDIO for visualizer is denied.
+                val storagePermissionGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_MEDIA_AUDIO) == PackageManager.PERMISSION_GRANTED
+                } else {
+                    ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+                }
+                
+                if (storagePermissionGranted) {
+                    initializeView()
+                } else {
+                    // Handle permission denied
+                }
             }
         }
     }

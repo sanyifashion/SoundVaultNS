@@ -30,4 +30,6 @@
     <string name="image_view_item_transform_content_description">Represents an image view in the
         item
     </string>
+    <string name="visualizer_view">Visualizer View</string>
+    <string name="shuffle">Shuffle</string>
 </resources>

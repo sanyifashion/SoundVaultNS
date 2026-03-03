@@ -17,12 +17,15 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.example.soundvault.databinding.ActivityMainBinding
 import com.example.soundvault.services.MusicService
+import com.example.soundvault.ui.library.LibraryFragment
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
     var musicService: MusicService? = null
+    var libraryFragment: LibraryFragment? = null
+    private var isShuffling = false
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
@@ -53,8 +56,10 @@ class MainActivity : AppCompatActivity() {
         setupActionBarWithNavController(navController, appBarConfiguration)
         binding.appBarMain.contentMain.bottomNavView?.setupWithNavController(navController)
 
+        libraryFragment = supportFragmentManager.findFragmentById(R.id.nav_library) as? LibraryFragment
+
         val serviceIntent = Intent(this, MusicService::class.java)
-        bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
+        bindService(serviceIntent, serviceConnection, BIND_AUTO_CREATE)
         startService(serviceIntent)
     }
 
