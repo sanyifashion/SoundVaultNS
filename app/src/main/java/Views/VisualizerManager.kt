@@ -11,13 +11,11 @@ class VisualizerManager(private val visualizerView: VisualizerView) {
     private var visualizer: Visualizer? = null
 
     fun setupVisualizer(context: Context, audioSessionId: Int) {
-        // Release existing visualizer if it exists
         release()
 
         if (audioSessionId != 0) {
-            // Check for RECORD_AUDIO permission
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                Log.w("VisualizerManager", "RECORD_AUDIO permission not granted. Cannot initialize Visualizer.")
+                Log.w("VisualizerManager", "RECORD_AUDIO permission not granted.")
                 return
             }
 
@@ -31,7 +29,7 @@ class VisualizerManager(private val visualizerView: VisualizerView) {
                             waveform: ByteArray,
                             samplingRate: Int
                         ) {
-                            visualizerView.updateVisualizer(waveform)
+                            visualizerView.updateVisualizer(waveform, null)
                         }
 
                         override fun onFftDataCapture(
@@ -39,9 +37,9 @@ class VisualizerManager(private val visualizerView: VisualizerView) {
                             fft: ByteArray,
                             samplingRate: Int
                         ) {
-                            // You could use FFT data for frequency-based visualization
+                            visualizerView.updateVisualizer(null, fft)
                         }
-                    }, Visualizer.getMaxCaptureRate() / 2, true, false)
+                    }, Visualizer.getMaxCaptureRate() / 2, true, true)
                     
                     enabled = true
                 }
