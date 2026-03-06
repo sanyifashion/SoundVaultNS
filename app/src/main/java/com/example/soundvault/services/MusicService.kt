@@ -158,6 +158,8 @@ class MusicService : Service(), MediaPlayer.OnCompletionListener, MediaPlayer.On
             mediaPlayer?.start()
             isPlaying.postValue(true)
             showNotification()
+        } else if (mediaPlayer == null && currentPosition >= 0 && currentPosition < musicList.size) {
+            play(currentPosition)
         }
     }
 

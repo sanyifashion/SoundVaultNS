@@ -5,21 +5,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <Views.VisualizerView
-        android:id="@+id/visualizerView"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="76dp"
-        android:layout_marginEnd="24dp"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:waveColor="@color/purple_500"
-        app:backgroundColor="@android:color/white" />
-
     <TextView
         android:id="@+id/title"
         android:layout_width="0dp"
@@ -30,9 +15,11 @@
         android:ellipsize="end"
         android:maxLines="1"
         android:textAlignment="center"
-        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         tools:text="Song Title" />
 
     <TextView
@@ -40,16 +27,28 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="4dp"
         android:layout_marginEnd="24dp"
         android:ellipsize="end"
         android:maxLines="1"
         android:textAlignment="center"
-        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+        android:textAppearance="@style/TextAppearance.AppCompat.Title"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/title"
         tools:text="Artist Name" />
+
+    <Views.VisualizerView
+        android:id="@+id/visualizerView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="24dp"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/artist"
+        app:waveColor="@color/purple_500"
+        app:backgroundColor="@android:color/white" />
 
     <SeekBar
         android:id="@+id/seek_bar"
@@ -75,13 +74,25 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-        <CheckBox
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/shuffle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:buttonTint="?attr/colorControlNormal"
+            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:checkable="true"
             android:contentDescription="@string/shuffle"
-            android:text="@string/shuffle" />
+            android:insetLeft="0dp"
+            android:insetTop="0dp"
+            android:insetRight="0dp"
+            android:insetBottom="0dp"
+            android:padding="0dp"
+            app:backgroundTint="@color/shuffle_background_tint"
+            app:cornerRadius="24dp"
+            app:icon="@drawable/ic_shuffle"
+            app:iconGravity="textStart"
+            app:iconPadding="0dp"
+            app:iconSize="24dp"
+            app:iconTint="@color/shuffle_button_tint" />
 
         <ImageButton
             android:id="@+id/previous"

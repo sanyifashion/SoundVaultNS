@@ -2,6 +2,7 @@ package com.example.soundvault.ui.nowplaying
 
 import Views.VisualizerManager
 import Views.VisualizerView
+import android.content.Context
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -53,10 +54,27 @@ class NowPlayingFragment : Fragment() {
         visualizerManager = VisualizerManager(visualizerView)
 
         val mainActivity = activity as? MainActivity
+
+        // Load saved settings
+        val sharedPrefs = requireContext().getSharedPreferences("SoundVaultPrefs", Context.MODE_PRIVATE)
+        val savedTheme = sharedPrefs.getString("VisualizerTheme", VisualizerView.Theme.MOUNTAINS.name)
+        visualizerView.setThemeByName(savedTheme ?: VisualizerView.Theme.MOUNTAINS.name)
+
+        // Cycle through themes on click (if music is playing and feature is enabled)
+        visualizerView.setOnClickListener {
+            val isPlaying = mainActivity?.musicService?.isPlaying?.value ?: false
+            val allowTap = sharedPrefs.getBoolean("AllowVisualizerTap", true)
+            
+            if (allowTap && isPlaying) {
+                val newTheme = visualizerView.nextTheme()
+                sharedPrefs.edit().putString("VisualizerTheme", newTheme).apply()
+            }
+        }
+
         binding.shuffle.isChecked = mainActivity?.musicService?.isShuffleEnabled ?: false
 
         // Set up shuffle callback
-        binding.shuffle.setOnCheckedChangeListener { _, isChecked ->
+        binding.shuffle.addOnCheckedChangeListener { _, isChecked ->
             mainActivity?.musicService?.isShuffleEnabled = isChecked
             // Update library fragment if needed
             (activity as? MainActivity)?.libraryFragment?.updateShuffleState(isChecked)
@@ -87,15 +105,21 @@ class NowPlayingFragment : Fragment() {
         }
 
         binding.stop.setOnClickListener {
-            (activity as? MainActivity)?.musicService?.stop()
+            (activity as? MainActivity)?.musicService?.let {
+                it.stop()
+            }
         }
 
         binding.next.setOnClickListener {
-            (activity as? MainActivity)?.musicService?.next()
+            (activity as? MainActivity)?.musicService?.let {
+                it.next()
+            }
         }
 
         binding.previous.setOnClickListener {
-            (activity as? MainActivity)?.musicService?.previous()
+            (activity as? MainActivity)?.musicService?.let {
+                it.previous()
+            }
         }
 
         binding.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -113,6 +137,11 @@ class NowPlayingFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         handler.post(updateSeekBarRunnable)
+        
+        // Refresh theme in case it was changed in settings
+        val sharedPrefs = requireContext().getSharedPreferences("SoundVaultPrefs", Context.MODE_PRIVATE)
+        val savedTheme = sharedPrefs.getString("VisualizerTheme", VisualizerView.Theme.MOUNTAINS.name)
+        visualizerView.setThemeByName(savedTheme ?: VisualizerView.Theme.MOUNTAINS.name)
     }
 
     override fun onPause() {
