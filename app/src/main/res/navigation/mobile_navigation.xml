@@ -15,7 +15,37 @@
         android:id="@+id/nav_playlists"
         android:name="com.example.soundvault.ui.playlists.PlaylistsFragment"
         android:label="@string/menu_playlists"
-        tools:layout="@layout/fragment_playlists" />
+        tools:layout="@layout/fragment_playlists" >
+        <action
+            android:id="@+id/action_nav_playlists_to_playlistDetailsFragment"
+            app:destination="@id/playlistDetailsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/playlistDetailsFragment"
+        android:name="com.example.soundvault.ui.playlists.PlaylistDetailsFragment"
+        android:label="{playlistName}"
+        tools:layout="@layout/fragment_playlist_details">
+        <argument
+            android:name="playlistId"
+            app:argType="long" />
+        <argument
+            android:name="playlistName"
+            app:argType="string" />
+        <action
+            android:id="@+id/action_playlistDetailsFragment_to_fileBrowserFragment"
+            app:destination="@id/fileBrowserFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/fileBrowserFragment"
+        android:name="com.example.soundvault.ui.playlists.FileBrowserFragment"
+        android:label="Browse Music Folder"
+        tools:layout="@layout/fragment_file_browser">
+        <argument
+            android:name="playlistId"
+            app:argType="long" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_now_playing"
