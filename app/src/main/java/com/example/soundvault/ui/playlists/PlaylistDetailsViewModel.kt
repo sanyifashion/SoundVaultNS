@@ -8,11 +8,19 @@ import kotlinx.coroutines.launch
 class PlaylistDetailsViewModel(application: Application) : AndroidViewModel(application) {
     private val playlistDao: PlaylistDao = AppDatabase.getDatabase(application).playlistDao()
     private val musicRepository = MusicRepository(application)
-
-    fun getSongsInPlaylist(playlistId: Long): LiveData<List<Music>> {
-        return playlistDao.getSongsForPlaylist(playlistId).asLiveData().map { songIds ->
+    
+    private val _playlistId = MutableLiveData<Long>()
+    
+    val songsInPlaylist: LiveData<List<Music>> = _playlistId.switchMap { id ->
+        playlistDao.getSongsForPlaylist(id).asLiveData().map { songIds ->
             val allMusic = musicRepository.getAllAudio()
             allMusic.filter { it.id in songIds }
+        }
+    }
+
+    fun setPlaylistId(id: Long) {
+        if (_playlistId.value != id) {
+            _playlistId.value = id
         }
     }
 

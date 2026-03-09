@@ -35,12 +35,14 @@ class PlaylistDetailsFragment : Fragment() {
         playlistId = arguments?.getLong("playlistId") ?: -1
         
         viewModel = ViewModelProvider(this)[PlaylistDetailsViewModel::class.java]
+        viewModel.setPlaylistId(playlistId)
 
         adapter = MusicAdapter(emptyList()) { position ->
             val mainActivity = activity as? MainActivity
-            val songs = viewModel.getSongsInPlaylist(playlistId).value
-            if (mainActivity != null && songs != null) {
-                mainActivity.musicService?.let { service ->
+            val songs = adapter.musicList
+            if (mainActivity != null && songs.isNotEmpty()) {
+                val service = mainActivity.musicService
+                if (service != null) {
                     service.setMusicList(ArrayList(songs))
                     service.play(position)
                 }
@@ -50,8 +52,19 @@ class PlaylistDetailsFragment : Fragment() {
         binding.playlistSongsRecyclerView.layoutManager = LinearLayoutManager(context)
         binding.playlistSongsRecyclerView.adapter = adapter
 
-        viewModel.getSongsInPlaylist(playlistId).observe(viewLifecycleOwner) { songs ->
+        viewModel.songsInPlaylist.observe(viewLifecycleOwner) { songs ->
             adapter.updateMusic(songs)
+        }
+
+        // Add observer for current playing song to highlight it in the playlist too
+        (activity as? MainActivity)?.musicService?.currentMusic?.observe(viewLifecycleOwner) { currentMusic ->
+            val songs = adapter.musicList
+            if (currentMusic != null) {
+                val index = songs.indexOfFirst { it.id == currentMusic.id }
+                adapter.setCurrentPlayingPosition(index)
+            } else {
+                adapter.setCurrentPlayingPosition(-1)
+            }
         }
 
         binding.addSongsFab.setOnClickListener {

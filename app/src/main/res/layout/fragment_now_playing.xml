@@ -3,7 +3,28 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="?attr/customBackgroundColor">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/visualizer_container"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_margin="32dp"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="8dp"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <Views.VisualizerView
+            android:id="@+id/visualizerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:waveColor="?attr/customPrimaryColor"
+            app:backgroundColor="?attr/customSurfaceColor" />
+    </androidx.cardview.widget.CardView>
 
     <TextView
         android:id="@+id/title"
@@ -15,11 +36,12 @@
         android:ellipsize="end"
         android:maxLines="1"
         android:textAlignment="center"
-        android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+        android:textColor="?attr/customTextColor"
+        android:textSize="22sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/visualizer_container"
         tools:text="Song Title" />
 
     <TextView
@@ -32,23 +54,12 @@
         android:ellipsize="end"
         android:maxLines="1"
         android:textAlignment="center"
-        android:textAppearance="@style/TextAppearance.AppCompat.Title"
+        android:textColor="?attr/customSecondaryColor"
+        android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/title"
         tools:text="Artist Name" />
-
-    <Views.VisualizerView
-        android:id="@+id/visualizerView"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginTop="24dp"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/artist"
-        app:waveColor="@color/purple_500"
-        app:backgroundColor="@android:color/white" />
 
     <SeekBar
         android:id="@+id/seek_bar"
@@ -56,80 +67,86 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
         android:layout_marginEnd="24dp"
-        android:layout_marginBottom="16dp"
-        app:layout_constraintBottom_toTopOf="@+id/controls"
+        android:layout_marginBottom="32dp"
+        android:progressTint="?attr/customPrimaryColor"
+        android:thumbTint="?attr/customPrimaryColor"
+        app:layout_constraintBottom_toTopOf="@+id/controls_card"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <LinearLayout
-        android:id="@+id/controls"
-        android:layout_width="0dp"
+    <FrameLayout
+        android:id="@+id/controls_card"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginEnd="24dp"
-        android:layout_marginBottom="24dp"
-        android:gravity="center"
-        android:orientation="horizontal"
+        android:layout_marginBottom="48dp"
+        android:background="@drawable/bg_card_3d"
+        android:padding="12dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/shuffle"
-            style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:checkable="true"
-            android:contentDescription="@string/shuffle"
-            android:insetLeft="0dp"
-            android:insetTop="0dp"
-            android:insetRight="0dp"
-            android:insetBottom="0dp"
-            android:padding="0dp"
-            app:backgroundTint="@color/shuffle_background_tint"
-            app:cornerRadius="24dp"
-            app:icon="@drawable/ic_shuffle"
-            app:iconGravity="textStart"
-            app:iconPadding="0dp"
-            app:iconSize="24dp"
-            app:iconTint="@color/shuffle_button_tint" />
+        <LinearLayout
+            android:id="@+id/controls"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
 
-        <ImageButton
-            android:id="@+id/previous"
-            style="@style/Widget.AppCompat.Button.Borderless"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:contentDescription="@string/previous"
-            android:src="@drawable/ic_previous"
-            app:tint="?attr/colorControlNormal" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/shuffle"
+                style="@style/Widget.MaterialComponents.Button.TextButton.Icon"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:insetLeft="0dp"
+                android:insetTop="0dp"
+                android:insetRight="0dp"
+                android:insetBottom="0dp"
+                app:cornerRadius="24dp"
+                app:icon="@drawable/ic_shuffle"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:iconSize="20dp"
+                app:iconTint="?attr/customTextColor" />
 
-        <ImageButton
-            android:id="@+id/play_pause"
-            style="@style/Widget.AppCompat.Button.Borderless"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:contentDescription="@string/play_pause"
-            android:src="@drawable/ic_play"
-            app:tint="?attr/colorControlNormal" />
+            <ImageButton
+                android:id="@+id/previous"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/previous"
+                android:src="@drawable/ic_previous"
+                app:tint="?attr/customPrimaryColor" />
 
-        <ImageButton
-            android:id="@+id/stop"
-            style="@style/Widget.AppCompat.Button.Borderless"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:contentDescription="@string/stop"
-            android:src="@drawable/ic_stop"
-            app:tint="?attr/colorControlNormal" />
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/play_pause"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:contentDescription="@string/play_pause"
+                android:src="@drawable/ic_play"
+                app:backgroundTint="?attr/customPrimaryColor"
+                app:fabSize="normal"
+                app:tint="@color/white" />
 
-        <ImageButton
-            android:id="@+id/next"
-            style="@style/Widget.AppCompat.Button.Borderless"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:contentDescription="@string/next"
-            android:src="@drawable/ic_next"
-            app:tint="?attr/colorControlNormal" />
+            <ImageButton
+                android:id="@+id/next"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/next"
+                android:src="@drawable/ic_next"
+                app:tint="?attr/customPrimaryColor" />
 
-    </LinearLayout>
+            <ImageButton
+                android:id="@+id/stop"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/stop"
+                android:src="@drawable/ic_stop"
+                app:tint="?attr/customTextColor" />
+
+        </LinearLayout>
+    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

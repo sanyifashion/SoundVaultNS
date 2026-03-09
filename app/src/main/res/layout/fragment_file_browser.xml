@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="?attr/customBackgroundColor">
 
     <TextView
         android:id="@+id/current_path_text"
@@ -13,6 +14,7 @@
         android:background="?attr/selectableItemBackground"
         android:ellipsize="start"
         android:singleLine="true"
+        android:textColor="?attr/customTextColor"
         android:textAppearance="@style/TextAppearance.AppCompat.Medium"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -23,6 +25,8 @@
         android:id="@+id/file_list_recycler_view"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingBottom="80dp"
         app:layout_constraintBottom_toTopOf="@id/bottom_bar"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -34,17 +38,19 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="8dp"
+        android:padding="16dp"
         android:gravity="end"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/add_current_folder_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Add all from this folder" />
+            android:text="Add all from this folder"
+            app:backgroundTint="?attr/customPrimaryColor"
+            app:cornerRadius="12dp" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -11,7 +11,7 @@ import com.example.soundvault.R
 import com.example.soundvault.data.Music
 
 class MusicAdapter(
-    private var musicList: List<Music>,
+    var musicList: List<Music>,
     private val onItemClicked: (Int) -> Unit
 ) : RecyclerView.Adapter<MusicAdapter.ViewHolder>() {
 
@@ -27,6 +27,7 @@ class MusicAdapter(
         val music = musicList[position]
         holder.title.text = music.title
         holder.artist.text = music.artist
+        
         Glide.with(holder.itemView.context)
             .load(music.artUri)
             .placeholder(R.mipmap.ic_launcher)

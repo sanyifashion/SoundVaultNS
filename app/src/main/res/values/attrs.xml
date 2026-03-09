@@ -1,7 +1,15 @@
 <resources>
-<!-- In C:/Users/sanyi/AppData/Local/Android/Sdk/platforms/android-34/data/res/values/attrs.xml -->
-<declare-styleable name="VisualizerView">
-    <attr name="waveColor" format="color" />
-    <attr name="backgroundColor" format="color" />
-</declare-styleable>
+    <declare-styleable name="VisualizerView">
+        <attr name="waveColor" format="color" />
+        <attr name="backgroundColor" format="color" />
+    </declare-styleable>
+
+    <!-- Custom Theme Attributes for UI Revamp -->
+    <attr name="customBackgroundColor" format="color" />
+    <attr name="customSurfaceColor" format="color" />
+    <attr name="customPrimaryColor" format="color" />
+    <attr name="customSecondaryColor" format="color" />
+    <attr name="customShadowDark" format="color" />
+    <attr name="customShadowLight" format="color" />
+    <attr name="customTextColor" format="color" />
 </resources>

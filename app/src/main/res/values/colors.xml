@@ -7,4 +7,26 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Light Blue & White Theme -->
+    <color name="blue_primary">#2196F3</color>
+    <color name="blue_primary_dark">#1976D2</color>
+    <color name="blue_accent">#03A9F4</color>
+    <color name="blue_bg">#F5F9FF</color>
+
+    <!-- Red & Black Theme -->
+    <color name="red_primary">#E53935</color>
+    <color name="red_primary_dark">#B71C1C</color>
+    <color name="red_accent">#FF5252</color>
+    <color name="red_bg">#121212</color>
+
+    <!-- Midnight Gold Theme -->
+    <color name="midnight_primary">#1A237E</color>
+    <color name="midnight_primary_dark">#0D47A1</color>
+    <color name="midnight_accent">#FFD700</color>
+    <color name="midnight_bg">#0A0E29</color>
+
+    <!-- 3D Effect Colors -->
+    <color name="shadow_dark">#40000000</color>
+    <color name="shadow_light">#20FFFFFF</color>
 </resources>

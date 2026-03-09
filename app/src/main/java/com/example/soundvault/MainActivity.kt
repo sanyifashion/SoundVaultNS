@@ -39,10 +39,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val sharedPrefs = getSharedPreferences("SoundVaultPrefs", Context.MODE_PRIVATE)
+        val theme = sharedPrefs.getString("AppTheme", "BLUE")
+        when (theme) {
+            "RED" -> setTheme(R.style.Theme_SoundVault_Red)
+            "MIDNIGHT" -> setTheme(R.style.Theme_SoundVault_Midnight)
+            else -> setTheme(R.style.Theme_SoundVault_Blue)
+        }
+
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         setSupportActionBar(binding.appBarMain.toolbar)
+
+        // Ensure the activity background matches the theme
+        window.decorView.setBackgroundResource(0) // Remove any default decor background
 
         val navHostFragment =
             (supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment?)!!

@@ -24,6 +24,8 @@ class MusicRepository(private val context: Context) {
         val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
         val sortOrder = "${MediaStore.Audio.Media.TITLE} ASC"
 
+        val albumArtMap = getAlbumsWithArt()
+
         try {
             val cursor = context.contentResolver.query(
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
@@ -51,11 +53,15 @@ class MusicRepository(private val context: Context) {
                     val path = it.getString(dataColumn)
                     val albumId = it.getLong(albumIdColumn)
                     
-                    // Use the legacy albumart URI which is more compatible with Glide on various Android versions
-                    val artUri = ContentUris.withAppendedId(
-                        Uri.parse("content://media/external/audio/albumart"),
-                        albumId
-                    )
+                    // Only provide artUri if we have reason to believe it exists
+                    val artUri = if (albumArtMap.contains(albumId)) {
+                        ContentUris.withAppendedId(
+                            Uri.parse("content://media/external/audio/albumart"),
+                            albumId
+                        )
+                    } else {
+                        null
+                    }
                     
                     val contentUri = ContentUris.withAppendedId(
                         MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
@@ -71,5 +77,37 @@ class MusicRepository(private val context: Context) {
             Log.e("MusicRepository", "Error querying MediaStore", e)
         }
         return audioList
+    }
+
+    /**
+     * Helper to find which albums actually have art to avoid Glide log spam for missing art.
+     */
+    private fun getAlbumsWithArt(): Set<Long> {
+        val albumsWithArt = mutableSetOf<Long>()
+        try {
+            // We query the Albums table. Even if ALBUM_ART column is null on newer Androids,
+            // we can still use this as a hint or just rely on the fact that if it's in the albums table,
+            // we might have art. However, to be sure and avoid the specific warning, 
+            // we really want to know if there's a file.
+            val projection = arrayOf(MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART)
+            context.contentResolver.query(
+                MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
+                projection,
+                null, null, null
+            )?.use { cursor ->
+                val idCol = cursor.getColumnIndex(MediaStore.Audio.Albums._ID)
+                val artCol = cursor.getColumnIndex(MediaStore.Audio.Albums.ALBUM_ART)
+                while (cursor.moveToNext()) {
+                    val id = cursor.getLong(idCol)
+                    val artPath = if (artCol != -1) cursor.getString(artCol) else null
+                    if (!artPath.isNullOrEmpty() && File(artPath).exists()) {
+                        albumsWithArt.add(id)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.w("MusicRepository", "Could not query album art", e)
+        }
+        return albumsWithArt
     }
 }

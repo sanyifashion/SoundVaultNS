@@ -2,8 +2,8 @@
     <string name="app_name">Sound Vault</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="nav_header_title">Android Studio</string>
-    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_title">Sound Vault</string>
+    <string name="nav_header_subtitle">Your Premium Music Player</string>
     <string name="nav_header_desc">Navigation header</string>
     <string name="action_settings">Settings</string>
 
@@ -20,16 +20,14 @@
     <string name="stop">Stop Playback</string>
     <string name="next">Next Song</string>
 
-    <string name="lorem_ipsum_title">Lorem Ipsum"</string>
-    <string name="lorem_ipsum">Lorem Ipsum is simply placeholder text of the printing and
-        typesetting industry. Lorem Ipsum has been the industry\'s standard placeholder text ever
-        since the 1500s, when an unknown printer took a galley of type and scrambled it to make a
-        type specimen book"
-    </string>
-    <string name="fab_content_description">Represents a view to invoke an action</string>
-    <string name="image_view_item_transform_content_description">Represents an image view in the
-        item
-    </string>
+    <string name="lorem_ipsum_title">Sound Vault</string>
+    <string name="lorem_ipsum">Welcome to the revamped Sound Vault. Experience music with our new stylish themes and 3D effects.</string>
+    <string name="fab_content_description">Action button</string>
+    <string name="image_view_item_transform_content_description">Item image</string>
     <string name="visualizer_view">Visualizer View</string>
     <string name="shuffle">Shuffle</string>
+
+    <string name="settings_app_theme">App Theme</string>
+    <string name="settings_visualizer_style">Visualizer Style</string>
+    <string name="settings_allow_tap">Allow visualizer change on tap</string>
 </resources>
