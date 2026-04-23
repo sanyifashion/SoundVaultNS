@@ -22,6 +22,9 @@
         <item name="android:textColorSecondary">?attr/customSecondaryColor</item>
         <item name="actionMenuTextColor">?attr/customTextColor</item>
 
+        <!-- AlertDialog Style -->
+        <item name="alertDialogTheme">@style/Theme.SoundVault.Dialog</item>
+
         <!-- Default Theme Values (Light Blue & White) -->
         <item name="customBackgroundColor">@color/blue_bg</item>
         <item name="customSurfaceColor">@color/white</item>
@@ -31,6 +34,14 @@
         <item name="customShadowLight">#FFFFFF</item>
         <item name="customTextColor">#444444</item>
         <item name="android:windowLightStatusBar">true</item>
+    </style>
+
+    <style name="Theme.SoundVault.Dialog" parent="Theme.MaterialComponents.DayNight.Dialog.Alert">
+        <item name="android:background">?attr/customSurfaceColor</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="colorAccent">?attr/customPrimaryColor</item>
+        <item name="android:textColor">?attr/customTextColor</item>
+        <item name="android:textColorPrimary">?attr/customTextColor</item>
     </style>
 
     <!-- Light Blue & White Theme -->

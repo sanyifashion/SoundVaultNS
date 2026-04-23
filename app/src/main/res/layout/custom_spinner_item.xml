@@ -8,4 +8,5 @@
     android:paddingHorizontal="16dp"
     android:textColor="?attr/customTextColor"
     android:textSize="16sp"
-    android:gravity="center_vertical" />
+    android:textStyle="bold"
+    android:gravity="center" />

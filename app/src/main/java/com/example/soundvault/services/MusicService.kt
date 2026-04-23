@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.media.MediaPlayer
+import android.media.audiofx.Equalizer
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
@@ -14,17 +15,28 @@ import androidx.core.app.NotificationCompat
 import androidx.lifecycle.MutableLiveData
 import com.example.soundvault.MainActivity
 import com.example.soundvault.R
+import com.example.soundvault.data.AppDatabase
+import com.example.soundvault.data.EqualizerPreset
 import com.example.soundvault.data.Music
+import com.example.soundvault.data.SongPreset
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 class MusicService : Service(), MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener {
 
     private var mediaPlayer: MediaPlayer? = null
+    private var equalizer: Equalizer? = null
     private var musicList: ArrayList<Music> = ArrayList()
     private var currentPosition: Int = -1
     var isShuffleEnabled = false
     val currentMusic = MutableLiveData<Music?>()
     val isPlaying = MutableLiveData<Boolean>()
+
+    private val serviceJob = Job()
+    private val serviceScope = CoroutineScope(Dispatchers.Main + serviceJob)
 
     private val binder = MusicServiceBinder()
 
@@ -56,11 +68,16 @@ class MusicService : Service(), MediaPlayer.OnCompletionListener, MediaPlayer.On
             try {
                 mediaPlayer?.stop()
                 mediaPlayer?.release()
+                equalizer?.release()
                 mediaPlayer = null
+                equalizer = null
                 
                 mediaPlayer = MediaPlayer.create(this, songToPlay.contentUri)
                 
                 if (mediaPlayer != null) {
+                    setupEqualizer(mediaPlayer!!.audioSessionId)
+                    loadPresetForSong(songToPlay.id)
+                    
                     mediaPlayer?.apply {
                         setOnCompletionListener(this@MusicService)
                         setOnErrorListener(this@MusicService)
@@ -85,6 +102,8 @@ class MusicService : Service(), MediaPlayer.OnCompletionListener, MediaPlayer.On
             mediaPlayer = MediaPlayer().apply {
                 setDataSource(song.path)
                 prepare()
+                setupEqualizer(audioSessionId)
+                loadPresetForSong(song.id)
                 start()
                 setOnCompletionListener(this@MusicService)
                 setOnErrorListener(this@MusicService)
@@ -95,6 +114,56 @@ class MusicService : Service(), MediaPlayer.OnCompletionListener, MediaPlayer.On
         } catch (e: Exception) {
             Log.e("MusicService", "Error playing with path fallback", e)
             isPlaying.postValue(false)
+        }
+    }
+
+    private fun setupEqualizer(audioSessionId: Int) {
+        try {
+            equalizer = Equalizer(0, audioSessionId).apply {
+                enabled = true
+            }
+        } catch (e: Exception) {
+            Log.e("MusicService", "Error setting up equalizer", e)
+        }
+    }
+
+    fun applyPreset(preset: EqualizerPreset, saveForSong: Boolean = true) {
+        equalizer?.let { eq ->
+            val numBands = eq.numberOfBands
+            if (numBands >= 3) {
+                eq.setBandLevel(0, preset.bass.toShort())
+                eq.setBandLevel((numBands / 2).toShort(), preset.mid.toShort())
+                eq.setBandLevel((numBands - 1).toShort(), preset.treble.toShort())
+            }
+            
+            if (saveForSong) {
+                currentMusic.value?.let { music ->
+                    serviceScope.launch(Dispatchers.IO) {
+                        val db = AppDatabase.getDatabase(this@MusicService)
+                        if (preset.id == -1L) {
+                            db.equalizerDao().deleteSongPreset(music.id)
+                        } else {
+                            db.equalizerDao().insertSongPreset(SongPreset(music.id, preset.id))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun loadPresetForSong(songId: Long) {
+        serviceScope.launch(Dispatchers.IO) {
+            val db = AppDatabase.getDatabase(this@MusicService)
+            val preset = db.equalizerDao().getPresetForSong(songId)
+            preset?.let {
+                launch(Dispatchers.Main) {
+                    applyPreset(it, saveForSong = false)
+                }
+            } ?: run {
+                launch(Dispatchers.Main) {
+                    applyPreset(DEFAULT_PRESET, saveForSong = false)
+                }
+            }
         }
     }
 
@@ -166,7 +235,9 @@ class MusicService : Service(), MediaPlayer.OnCompletionListener, MediaPlayer.On
     fun stop() {
         mediaPlayer?.stop()
         mediaPlayer?.release()
+        equalizer?.release()
         mediaPlayer = null
+        equalizer = null
         currentMusic.postValue(null)
         isPlaying.postValue(false)
         stopForeground(true)
@@ -220,9 +291,19 @@ class MusicService : Service(), MediaPlayer.OnCompletionListener, MediaPlayer.On
         return mediaPlayer?.audioSessionId ?: 0
     }
 
+    fun getEqualizerBands(): Int {
+        return equalizer?.numberOfBands?.toInt() ?: 0
+    }
+
+    fun getBandLevelRange(): IntArray {
+        return equalizer?.bandLevelRange?.map { it.toInt() }?.toIntArray() ?: intArrayOf(-1500, 1500)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         mediaPlayer?.release()
+        equalizer?.release()
+        serviceJob.cancel()
     }
 
     companion object {
@@ -230,5 +311,7 @@ class MusicService : Service(), MediaPlayer.OnCompletionListener, MediaPlayer.On
         const val ACTION_PAUSE = "PAUSE"
         const val ACTION_NEXT = "NEXT"
         const val ACTION_PREVIOUS = "PREVIOUS"
+        
+        val DEFAULT_PRESET = EqualizerPreset(id = -1, name = "Default", bass = 0, mid = 0, treble = 0)
     }
 }

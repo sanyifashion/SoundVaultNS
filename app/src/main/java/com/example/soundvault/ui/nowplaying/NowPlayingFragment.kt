@@ -9,32 +9,44 @@ import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.SeekBar
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.example.soundvault.MainActivity
 import com.example.soundvault.R
+import com.example.soundvault.data.AppDatabase
+import com.example.soundvault.data.EqualizerPreset
 import com.example.soundvault.data.Music
 import com.example.soundvault.databinding.FragmentNowPlayingBinding
+import com.example.soundvault.services.MusicService
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 class NowPlayingFragment : Fragment() {
     private var _binding: FragmentNowPlayingBinding? = null
+    // Safely access binding only when view exists
     private val binding get() = _binding!!
+    
     private lateinit var handler: Handler
     private val updateSeekBarRunnable = object : Runnable {
         override fun run() {
             val mainActivity = activity as? MainActivity
-            if (_binding != null && isAdded && mainActivity != null) {
+            val b = _binding
+            if (b != null && isAdded && mainActivity != null) {
                 mainActivity.musicService?.getCurrentPosition()?.let {
-                    binding.seekBar.progress = it
+                    b.seekBar.progress = it
                 }
                 handler.postDelayed(this, 1000)
             }
         }
     }
 
-    // Visualizer components
     private lateinit var visualizerView: VisualizerView
     private lateinit var visualizerManager: VisualizerManager
+    private var presetsList = listOf<EqualizerPreset>()
+    private var isFirstSelection = true
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -49,18 +61,15 @@ class NowPlayingFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Initialize visualizer
         visualizerView = binding.visualizerView
         visualizerManager = VisualizerManager(visualizerView)
 
         val mainActivity = activity as? MainActivity
 
-        // Load saved settings
         val sharedPrefs = requireContext().getSharedPreferences("SoundVaultPrefs", Context.MODE_PRIVATE)
         val savedTheme = sharedPrefs.getString("VisualizerTheme", VisualizerView.Theme.MOUNTAINS.name)
         visualizerView.setThemeByName(savedTheme ?: VisualizerView.Theme.MOUNTAINS.name)
 
-        // Cycle through themes on click (if music is playing and feature is enabled)
         visualizerView.setOnClickListener {
             val isPlaying = mainActivity?.musicService?.isPlaying?.value ?: false
             val allowTap = sharedPrefs.getBoolean("AllowVisualizerTap", true)
@@ -72,20 +81,19 @@ class NowPlayingFragment : Fragment() {
         }
 
         binding.shuffle.isChecked = mainActivity?.musicService?.isShuffleEnabled ?: false
-
-        // Set up shuffle callback
         binding.shuffle.addOnCheckedChangeListener { _, isChecked ->
             mainActivity?.musicService?.isShuffleEnabled = isChecked
-            // Update library fragment if needed
             (activity as? MainActivity)?.libraryFragment?.updateShuffleState(isChecked)
         }
 
-        mainActivity?.musicService?.currentMusic?.observe(viewLifecycleOwner) {
-            updateUI(it)
-            // Setup visualizer when music changes
-            it?.let { music ->
+        setupEqSpinner()
+
+        mainActivity?.musicService?.currentMusic?.observe(viewLifecycleOwner) { music ->
+            updateUI(music)
+            if (music != null) {
                 mainActivity.musicService?.let { service ->
                     visualizerManager.setupVisualizer(requireContext(), service.getAudioSessionId())
+                    updateSpinnerSelectionForSong(music.id)
                 }
             }
         }
@@ -105,21 +113,15 @@ class NowPlayingFragment : Fragment() {
         }
 
         binding.stop.setOnClickListener {
-            (activity as? MainActivity)?.musicService?.let {
-                it.stop()
-            }
+            (activity as? MainActivity)?.musicService?.stop()
         }
 
         binding.next.setOnClickListener {
-            (activity as? MainActivity)?.musicService?.let {
-                it.next()
-            }
+            (activity as? MainActivity)?.musicService?.next()
         }
 
         binding.previous.setOnClickListener {
-            (activity as? MainActivity)?.musicService?.let {
-                it.previous()
-            }
+            (activity as? MainActivity)?.musicService?.previous()
         }
 
         binding.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -128,17 +130,67 @@ class NowPlayingFragment : Fragment() {
                     (activity as? MainActivity)?.musicService?.seekTo(progress)
                 }
             }
-
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
     }
 
+    private fun setupEqSpinner() {
+        val db = AppDatabase.getDatabase(requireContext())
+        lifecycleScope.launch {
+            db.equalizerDao().getAllPresets().collectLatest { presets ->
+                val b = _binding ?: return@collectLatest
+                presetsList = listOf(MusicService.DEFAULT_PRESET) + presets
+                val presetNames = presetsList.map { it.name }
+                
+                val adapter = ArrayAdapter(requireContext(), R.layout.custom_spinner_item, presetNames)
+                adapter.setDropDownViewResource(R.layout.custom_spinner_dropdown_item)
+                b.nowPlayingEqSpinner.adapter = adapter
+                
+                (activity as? MainActivity)?.musicService?.currentMusic?.value?.let { music ->
+                    updateSpinnerSelectionForSong(music.id)
+                }
+            }
+        }
+
+        binding.nowPlayingEqSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                if (isFirstSelection) {
+                    isFirstSelection = false
+                    return
+                }
+                if (position in presetsList.indices) {
+                    val selectedPreset = presetsList[position]
+                    (activity as? MainActivity)?.musicService?.applyPreset(selectedPreset)
+                }
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+    }
+
+    private fun updateSpinnerSelectionForSong(songId: Long) {
+        lifecycleScope.launch {
+            val db = AppDatabase.getDatabase(requireContext())
+            val preset = db.equalizerDao().getPresetForSong(songId)
+            val index = if (preset != null) {
+                presetsList.indexOfFirst { it.id == preset.id }.coerceAtLeast(0)
+            } else {
+                0 // Default
+            }
+            
+            val b = _binding ?: return@launch
+            if (b.nowPlayingEqSpinner.adapter != null && 
+                index in 0 until b.nowPlayingEqSpinner.count &&
+                b.nowPlayingEqSpinner.selectedItemPosition != index) {
+                isFirstSelection = true
+                b.nowPlayingEqSpinner.setSelection(index)
+            }
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         handler.post(updateSeekBarRunnable)
-        
-        // Refresh theme in case it was changed in settings
         val sharedPrefs = requireContext().getSharedPreferences("SoundVaultPrefs", Context.MODE_PRIVATE)
         val savedTheme = sharedPrefs.getString("VisualizerTheme", VisualizerView.Theme.MOUNTAINS.name)
         visualizerView.setThemeByName(savedTheme ?: VisualizerView.Theme.MOUNTAINS.name)
@@ -150,24 +202,20 @@ class NowPlayingFragment : Fragment() {
     }
 
     private fun updateUI(music: Music?) {
-        if (_binding == null) return
-        if (music != null) {
-            binding.title.text = music.title
-            binding.artist.text = music.artist
-            binding.seekBar.max = music.duration.toInt()
-        } else {
-            binding.title.text = ""
-            binding.artist.text = ""
-            binding.seekBar.progress = 0
-        }
+        val b = _binding ?: return
+        b.title.text = music?.title ?: ""
+        b.artist.text = music?.artist ?: ""
+        if (music == null) b.seekBar.progress = 0
+        b.seekBar.max = music?.duration?.toInt() ?: 0
+        b.eqContainer.visibility = if (music != null) View.VISIBLE else View.GONE
     }
 
     private fun updatePlayPauseButton(isPlaying: Boolean) {
-        if (_binding == null) return
+        val b = _binding ?: return
         if (isPlaying) {
-            binding.playPause.setImageResource(R.drawable.ic_pause)
+            b.playPause.setImageResource(R.drawable.ic_pause)
         } else {
-            binding.playPause.setImageResource(R.drawable.ic_play)
+            b.playPause.setImageResource(R.drawable.ic_play)
         }
     }
 

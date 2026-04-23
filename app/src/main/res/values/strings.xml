@@ -30,4 +30,8 @@
     <string name="settings_app_theme">App Theme</string>
     <string name="settings_visualizer_style">Visualizer Style</string>
     <string name="settings_allow_tap">Allow visualizer change on tap</string>
+
+    <!-- Equalizer Strings -->
+    <string name="eq_preset_label">EQ Preset: </string>
+    <string name="eq_hint_start_playing">Please start playing a song to enable equalizer settings.</string>
 </resources>
