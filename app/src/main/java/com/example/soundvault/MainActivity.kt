@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.IBinder
+import android.support.v4.media.session.MediaControllerCompat
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
@@ -25,16 +26,21 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     var musicService: MusicService? = null
     var libraryFragment: LibraryFragment? = null
-    private var isShuffling = false
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as MusicService.MusicServiceBinder
-            musicService = binder.getService()
+            val boundService = binder.getService()
+            musicService = boundService
+            
+            // Initialize MediaController
+            val mediaController = MediaControllerCompat(this@MainActivity, boundService.getSessionToken())
+            MediaControllerCompat.setMediaController(this@MainActivity, mediaController)
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             musicService = null
+            MediaControllerCompat.setMediaController(this@MainActivity, null)
         }
     }
 
@@ -52,8 +58,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
         setSupportActionBar(binding.appBarMain.toolbar)
 
-        // Ensure the activity background matches the theme
-        window.decorView.setBackgroundResource(0) // Remove any default decor background
+        window.decorView.setBackgroundResource(0)
 
         val navHostFragment =
             (supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment?)!!

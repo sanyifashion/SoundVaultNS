@@ -3,6 +3,7 @@ package com.example.soundvault.ui.library
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
@@ -17,6 +18,16 @@ class MusicAdapter(
 
     private var isShuffleEnabled: Boolean = false
     private var currentPlayingPosition: Int = -1
+    
+    // Multi-selection state
+    var isMultiSelectMode = false
+        set(value) {
+            field = value
+            if (!value) selectedItems.clear()
+            notifyDataSetChanged()
+        }
+    val selectedItems = mutableSetOf<Music>()
+    var onLongClick: (() -> Unit)? = null
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.music_item, parent, false)
@@ -34,15 +45,41 @@ class MusicAdapter(
             .error(R.mipmap.ic_launcher)
             .into(holder.albumArt)
         
+        // Multi-select checkbox
+        val checkBox = holder.itemView.findViewById<CheckBox>(R.id.selection_checkbox)
+        checkBox.visibility = if (isMultiSelectMode) View.VISIBLE else View.GONE
+        checkBox.isChecked = selectedItems.contains(music)
+
         holder.itemView.setOnClickListener {
-            val currentPos = holder.bindingAdapterPosition
-            if (currentPos != RecyclerView.NO_POSITION) {
-                onItemClicked(currentPos)
+            if (isMultiSelectMode) {
+                toggleSelection(music)
+            } else {
+                val currentPos = holder.bindingAdapterPosition
+                if (currentPos != RecyclerView.NO_POSITION) {
+                    onItemClicked(currentPos)
+                }
             }
         }
 
-        // Highlight the current playing song
+        holder.itemView.setOnLongClickListener {
+            if (!isMultiSelectMode) {
+                isMultiSelectMode = true
+                toggleSelection(music)
+                onLongClick?.invoke()
+                true
+            } else false
+        }
+
         holder.itemView.isActivated = (currentPlayingPosition == position)
+    }
+
+    private fun toggleSelection(music: Music) {
+        if (selectedItems.contains(music)) {
+            selectedItems.remove(music)
+        } else {
+            selectedItems.add(music)
+        }
+        notifyDataSetChanged()
     }
 
     override fun getItemCount(): Int = musicList.size

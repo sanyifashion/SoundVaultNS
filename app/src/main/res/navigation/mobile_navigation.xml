@@ -9,7 +9,24 @@
         android:id="@+id/nav_library"
         android:name="com.example.soundvault.ui.library.LibraryFragment"
         android:label="@string/menu_library"
-        tools:layout="@layout/fragment_library" />
+        tools:layout="@layout/fragment_library" >
+        <action
+            android:id="@+id/action_nav_library_to_filteredLibraryFragment"
+            app:destination="@id/filteredLibraryFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/filteredLibraryFragment"
+        android:name="com.example.soundvault.ui.library.FilteredLibraryFragment"
+        android:label="{title}"
+        tools:layout="@layout/fragment_library">
+        <argument
+            android:name="title"
+            app:argType="string" />
+        <argument
+            android:name="type"
+            app:argType="string" /> <!-- "album" or "artist" -->
+    </fragment>
 
     <fragment
         android:id="@+id/nav_playlists"

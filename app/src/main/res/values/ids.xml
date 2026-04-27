@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="action_add_to_playlist" type="id" />
+    <item name="action_exclude" type="id" />
+    <item name="action_cancel" type="id" />
+</resources>
